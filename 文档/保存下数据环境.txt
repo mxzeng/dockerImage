@@ -1,0 +1,3 @@
+commit操作并不会包含容器内挂载数据卷中的数据变化。
+docker commit 命令会将docker容器的变更保存下来，并且生成新的镜像。
+	docker commit <name>

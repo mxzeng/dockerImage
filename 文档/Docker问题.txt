@@ -1,0 +1,5 @@
+DNS设置：
+	您可以/etc/docker/daemon.json使用dns密钥编辑（或创建）配置文件。
+	{
+	  "dns": ["your_dns_address", "8.8.8.8"]
+	}

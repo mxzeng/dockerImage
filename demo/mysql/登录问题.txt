@@ -1,0 +1,13 @@
+注：MYSQL8.0使用客户端偶遇 caching_sha2_password cannot be loaded 问题
+原因：
+在连接数据库时不能加载‘caching_sha2_password’这个插件，也就是不能对身份验证。
+解决办法：
+执行如下语句：
+
+ALTER USER 'root'@'%' IDENTIFIED BY '123456' PASSWORD EXPIRE NEVER; #修改加密规则 
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456';  #更新一下用户的密码 
+FLUSH PRIVILEGES; #刷新权限
+ALTER USER 'root'@'%' IDENTIFIED BY '123456';# 重置密码
+FLUSH PRIVILEGES;
+
+数据库在Docke中持久化需要用到路径映射将数据库文件放在本机并将本机路径映射到docker镜像中

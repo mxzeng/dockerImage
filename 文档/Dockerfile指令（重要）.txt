@@ -1,0 +1,116 @@
+为什么要使用Dockerfile？
+答：通过Docker提供的命令构建系统生成一个新的镜像，并搭建环境。
+
+使用Docker命令编译执行。
+docker build -f xxx.dockerfile .
+执行以上命令后会在 docker image ls 中看到一个新的镜像。
+
+执行命令
+	RUN
+		指令通常用于安装应用和软件包。
+	CMD
+		指令允许用户指定容器的默认执行的命令。
+	ENTRYPOINT
+		的 Exec 格式用于设置容器启动时要执行的命令及其参数，同时可通过CMD命令或者命令行参数提供额外的参数。
+
+组成部分
+|---------------------------------------------------------------------
+|   部分   |        命令                                             |
+|----------|----------------------------------------------------------
+| 基础镜像 |         FROM                                            |
+| 维护者信 |      MAINTAINER                                         |
+| 镜像指令 | RUN、COPY、ADD、EXPOSE、WORKDIR、ONBUILD、USER、VOLUME  |
+| 容器指令 | CMD、ENTRYPOINT                                         |
+----------------------------------------------------------------------
+
+各命令详解
+	FROM：
+	指定哪种镜像作为新镜像的基础镜像，如：
+		FROM ubuntu:14.04
+		详细说明：
+			第一条指令必须为 FROM 指令。并且，如果在同一个Dockerfile中创建多个镜像时，可以使用多个 FROM 指令（每个镜像一次）。
+			格式为 FROM <image> 或 FROM <image>:<tag>
+	MAINTAINER：
+	指明该镜像的作者和其电子邮件，如：
+		MAINTAINER vector4wang "xxxxxxx@qq.com"
+		详细说明：
+			格式为 MAINTAINER <name>
+	RUN：
+	在新镜像内部执行的命令，比如安装一些软件、配置一些基础环境，可使用\来换行，如：
+		RUN echo 'hello docker!' \
+        > /usr/local/file.txt
+	RUN：
+	也可以使用exec格式RUN ["executable", "param1", "param2"]的命令，如：
+		RUN ["apt-get","install","-y","nginx"]
+		要注意的是，executable是命令，后面的param是参数
+	COPY：
+	将主机的文件复制到镜像内，如果目的位置不存在，Docker会自动创建所有需要的目录结构，但是它只是单纯的复制，并不会去做文件提取和解压工作。如：
+		COPY application.yml /etc/springboot/hello-service/src/resources
+		注意：需要复制的目录一定要放在Dockerfile文件的同级目录下
+	ADD：
+	将主机的文件复制到镜像中，跟COPY一样，限制条件和使用方式都一样，如：
+		ADD application.yml /etc/springboot/hello-service/src/resources
+		但是ADD会对压缩文件（tar, gzip, bzip2, etc）做提取和解压操作。
+	EXPOSE：
+	暴露镜像的端口供主机做映射，启动镜像时，使用-P参数来讲镜像端口与宿主机的随机端口做映射。使用方式（可指定多个）：
+		EXPOSE 8080
+		EXPOSE 8081
+	WORKDIR：
+	在构建镜像时，指定镜像的工作目录，之后的命令都是基于此工作目录，如果不存在，则会创建目录。如
+		WORKDIR /usr/local
+		WORKDIR webservice
+		RUN echo 'hello docker' > text.txt
+	ONBUILD：
+		包含ONBUILD命令的镜像被作为其他镜像的父镜像时会执行 ONBUILD 后面的命令。
+		|------------------------|
+		|         A镜像          |
+		| FROM ubuntu            |
+		| ONBUILD ADD . /var/www |
+		|------------------------|
+		|         B镜像          |
+		| FROM image-A           |
+		|------------------------|
+		|        执行B镜像       |
+		| B镜像会执行ONBUILD命令 |
+		|------------------------|
+	USER：
+		指定该镜像以什么样的用户去执行，如：
+		USER root
+	VOLUME：
+		用来向基于镜像创建的容器添加卷。比如你可以将mongodb镜像中存储数据的data文件指定为主机的某个文件。(容器内部建议不要存储任何数据)如：
+		VOLUME /data/db /data/configdb
+		注意:VOLUME 主机目录 容器目录
+	CMD：
+		容器启动时需要执行的命令，如：
+		CMD /bin/bash
+		同样可以使用exec语法，如
+		CMD ["/bin/bash"]
+		当有多个CMD的时候，只有最后一个生效。
+		详细说明：
+			我将它理解为参数供给命令，应为它的参数可以传递覆盖。
+			支持三种格式
+				CMD ["executable","param1","param2"] 使用 exec 执行，推荐方式；
+				CMD command param1 param2 在 /bin/sh 中执行，提供给需要交互的应用；
+				CMD ["param1","param2"] 提供给 ENTRYPOINT 的默认参数；
+	ENTRYPOINT：
+		作用和用法和CMD一模一样
+		CMD和ENTRYPOINT的区别
+		CMD和ENTRYPOINT同样作为容器启动时执行的命令，区别有以下几点：
+			CMD的命令会被 docker run 的命令覆盖而ENTRYPOINT不会
+		例：参与命令 CMD,ENTRYPOINT,docker run
+		案例一：
+			dockerfile-> CMD ["/use/local/nginx"]
+			cmd-> docker run -ti <name> apache
+			CMD中的 CMD ["/use/local/nginx"] 替换为 CMD ["apache"]
+			最终执行：apache
+		案例二：
+			dockerfile-> CMD ["nginx"]
+			dockerfile-> ENTRYPOINT ["bash", "/use/local/"]
+			cmd-> docker run -ti <name> apache
+			CMD 将 apache 替换到 CMD 命令 CMD ["apache"]
+			将命令 nginx 参数放在 ENTRYPOINT 之后当做参数 ENTRYPOINT ["bash", "/use/local/", "apache"]
+			最终执行：bash /use.local/ apache
+			以上命令无法执行，只是例子：
+			[] 中的每个间隔元素都有一个空格
+			第一个元素为 '命令'，之后的所有元素都为 '参数'。
+			
